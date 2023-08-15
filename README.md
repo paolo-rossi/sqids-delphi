@@ -8,7 +8,7 @@ Delphi port of Sqids. Generate short YouTube-looking IDs from numbers
 <h1 align="center">Sqids-Delphi</h1>
 <p align="center">
 	<a href="https://github.com/paolo-rossi/sqids-delphi/releases">
-		<img alt="Release" src="https://img.shields.io/github/v/release/paolo-rossi/sqids-delphi?style=for-the-badge&color=FB0088" />
+		<img alt="Release" src="https://img.shields.io/github/v/tag/paolo-rossi/sqids-delphi?style=for-the-badge&color=FB0088" />
 	</a>
 	<a href="https://github.com/paolo-rossi/sqids-delphi/tree/main/Source">
 		<img alt="Language" src="https://img.shields.io/badge/written_in-Delphi-8F00FF?style=for-the-badge" />
