@@ -25,6 +25,7 @@ type
     btnAlphabetShuffle: TSpeedButton;
     btnAlphabetCopy: TSpeedButton;
     timerDelete: TTimer;
+    lblTitle: TLabel;
     procedure btnAlphabetShuffleClick(Sender: TObject);
     procedure btnInputPlusClick(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
@@ -36,7 +37,7 @@ type
     FDeleteProc: TProc;
     FInput: TObjectList<TButtonedEdit>;
 
-    function NewInput(): TButtonedEdit;
+    function NewInput(AValue: TNumber = 0): TButtonedEdit;
     procedure PlaceInput(AInput: TButtonedEdit; AIndex: Integer);
     procedure PlaceAllInput;
 
@@ -85,7 +86,7 @@ begin
    timerDelete.Enabled := True;
 end;
 
-function TfrmMain.NewInput: TButtonedEdit;
+function TfrmMain.NewInput(AValue: TNumber): TButtonedEdit;
 begin
   Result := TButtonedEdit.Create(nil);
   FInput.Add(Result);
@@ -101,7 +102,10 @@ begin
   Result.OnRightButtonClick := HandleInputDelete;
   Result.OnChange := DoEncode;
 
-  Result.Text := Random(500).ToString();
+  if AValue > 0 then
+    Result.Text := AValue.ToString
+  else
+    Result.Text := Random(500).ToString();
 
   PlaceInput(Result, FInput.Count - 1);
 end;
@@ -129,6 +133,10 @@ begin
   memoAlphabet.Lines.Text := DEFAULT_ALPHABET;
   memoAlphabet.OnChange := DoEncode;
   edtMinLength.OnChange := DoEncode;
+
+  NewInput(123);
+  NewInput(456);
+  NewInput(789);
 end;
 
 procedure TfrmMain.DoEncode(Sender: TObject);

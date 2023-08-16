@@ -1,8 +1,9 @@
 object frmMain: TfrmMain
   Left = 0
   Top = 0
+  BorderStyle = bsSingle
   Caption = 'Sqids-Delphi Playground'
-  ClientHeight = 286
+  ClientHeight = 321
   ClientWidth = 615
   Color = clBtnFace
   Font.Charset = DEFAULT_CHARSET
@@ -15,7 +16,7 @@ object frmMain: TfrmMain
   TextHeight = 15
   object lblInput: TLabel
     Left = 16
-    Top = 12
+    Top = 61
     Width = 45
     Height = 19
     Caption = 'Input'
@@ -28,7 +29,7 @@ object frmMain: TfrmMain
   end
   object lblAlphabet: TLabel
     Left = 315
-    Top = 12
+    Top = 61
     Width = 72
     Height = 19
     Caption = 'Alphabet'
@@ -41,7 +42,7 @@ object frmMain: TfrmMain
   end
   object lblOutput: TLabel
     Left = 315
-    Top = 213
+    Top = 253
     Width = 54
     Height = 19
     Caption = 'Output'
@@ -54,7 +55,7 @@ object frmMain: TfrmMain
   end
   object lblMinLength: TLabel
     Left = 315
-    Top = 178
+    Top = 218
     Width = 153
     Height = 19
     Caption = 'Output Min Length'
@@ -67,7 +68,7 @@ object frmMain: TfrmMain
   end
   object btnInputPlus: TSpeedButton
     Left = 64
-    Top = 10
+    Top = 59
     Width = 23
     Height = 22
     ImageIndex = 3
@@ -76,7 +77,7 @@ object frmMain: TfrmMain
   end
   object btnAlphabetShuffle: TSpeedButton
     Left = 395
-    Top = 10
+    Top = 59
     Width = 23
     Height = 22
     ImageIndex = 2
@@ -85,15 +86,31 @@ object frmMain: TfrmMain
   end
   object btnAlphabetCopy: TSpeedButton
     Left = 424
-    Top = 10
+    Top = 59
     Width = 23
     Height = 22
     ImageIndex = 1
     Images = imgMain
   end
+  object lblTitle: TLabel
+    Left = 130
+    Top = 8
+    Width = 308
+    Height = 37
+    Caption = 'Sqid-Delphi Playground'
+    Color = clBtnFace
+    Font.Charset = DEFAULT_CHARSET
+    Font.Color = clGray
+    Font.Height = -27
+    Font.Name = 'Segoe UI'
+    Font.Style = [fsBold]
+    ParentColor = False
+    ParentFont = False
+    StyleElements = [seClient, seBorder]
+  end
   object memoAlphabet: TMemo
     Left = 315
-    Top = 37
+    Top = 86
     Width = 281
     Height = 123
     Font.Charset = ANSI_CHARSET
@@ -107,7 +124,7 @@ object frmMain: TfrmMain
   end
   object edtOutput: TButtonedEdit
     Left = 315
-    Top = 238
+    Top = 278
     Width = 281
     Height = 27
     Font.Charset = ANSI_CHARSET
@@ -124,14 +141,14 @@ object frmMain: TfrmMain
   end
   object pnlInput: TPanel
     Left = 16
-    Top = 38
+    Top = 87
     Width = 281
-    Height = 228
+    Height = 218
     TabOrder = 2
   end
   object edtMinLength: TButtonedEdit
     Left = 483
-    Top = 175
+    Top = 215
     Width = 113
     Height = 27
     Font.Charset = ANSI_CHARSET
@@ -149,7 +166,7 @@ object frmMain: TfrmMain
   end
   object imgMain: TImageList
     Left = 536
-    Top = 16
+    Top = 56
     Bitmap = {
       494C010105000800040010001000FFFFFFFFFF10FFFFFFFFFFFFFFFF424D3600
       0000000000003600000028000000400000002000000001002000000000000020
@@ -427,6 +444,6 @@ object frmMain: TfrmMain
     Interval = 50
     OnTimer = timerDeleteTimer
     Left = 408
-    Top = 152
+    Top = 192
   end
 end
