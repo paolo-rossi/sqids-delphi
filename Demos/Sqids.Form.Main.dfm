@@ -91,6 +91,7 @@ object frmMain: TfrmMain
     Height = 22
     ImageIndex = 1
     Images = imgMain
+    OnClick = btnAlphabetCopyClick
   end
   object lblTitle: TLabel
     Left = 130
@@ -127,17 +128,20 @@ object frmMain: TfrmMain
     Top = 278
     Width = 281
     Height = 27
+    DoubleBuffered = True
     Font.Charset = ANSI_CHARSET
     Font.Color = clWindowText
     Font.Height = -16
     Font.Name = 'Consolas'
     Font.Style = []
     Images = imgMain
+    ParentDoubleBuffered = False
     ParentFont = False
     ReadOnly = True
     RightButton.ImageIndex = 1
     RightButton.Visible = True
     TabOrder = 1
+    OnRightButtonClick = edtOutputRightButtonClick
   end
   object pnlInput: TPanel
     Left = 16
@@ -151,6 +155,7 @@ object frmMain: TfrmMain
     Top = 215
     Width = 113
     Height = 27
+    DoubleBuffered = True
     Font.Charset = ANSI_CHARSET
     Font.Color = clWindowText
     Font.Height = -16
@@ -158,11 +163,13 @@ object frmMain: TfrmMain
     Font.Style = []
     Images = imgMain
     NumbersOnly = True
+    ParentDoubleBuffered = False
     ParentFont = False
     RightButton.ImageIndex = 1
     RightButton.Visible = True
     TabOrder = 3
     Text = '0'
+    OnRightButtonClick = edtMinLengthRightButtonClick
   end
   object imgMain: TImageList
     Left = 536

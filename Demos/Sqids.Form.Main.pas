@@ -26,8 +26,11 @@ type
     btnAlphabetCopy: TSpeedButton;
     timerDelete: TTimer;
     lblTitle: TLabel;
+    procedure btnAlphabetCopyClick(Sender: TObject);
     procedure btnAlphabetShuffleClick(Sender: TObject);
     procedure btnInputPlusClick(Sender: TObject);
+    procedure edtMinLengthRightButtonClick(Sender: TObject);
+    procedure edtOutputRightButtonClick(Sender: TObject);
     procedure FormDestroy(Sender: TObject);
     procedure FormCreate(Sender: TObject);
     procedure timerDeleteTimer(Sender: TObject);
@@ -53,9 +56,15 @@ var
 implementation
 
 uses
+  Vcl.Clipbrd,
   System.Threading;
 
 {$R *.dfm}
+
+procedure TfrmMain.btnAlphabetCopyClick(Sender: TObject);
+begin
+  Clipboard.AsText := memoAlphabet.Lines.Text;
+end;
 
 procedure TfrmMain.btnAlphabetShuffleClick(Sender: TObject);
 begin
@@ -150,6 +159,16 @@ begin
   var LGen := TSqids.New(LOpt);
 
   edtOutput.Text := LGen.Encode(LNumbers);
+end;
+
+procedure TfrmMain.edtMinLengthRightButtonClick(Sender: TObject);
+begin
+  Clipboard.AsText := edtMinLength.Text;
+end;
+
+procedure TfrmMain.edtOutputRightButtonClick(Sender: TObject);
+begin
+  Clipboard.AsText := edtOutput.Text;
 end;
 
 procedure TfrmMain.timerDeleteTimer(Sender: TObject);

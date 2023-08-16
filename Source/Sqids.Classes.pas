@@ -394,6 +394,7 @@ begin
 	var lowerId := string.LowerCase(Id);
 	var r := TRegEx.Create('\d', [roNotEmpty, roCompiled]);
 
+  Result := False;
 	for var word in FBlocklist do
   begin
 		if Length(word) <= Length(lowerId) then

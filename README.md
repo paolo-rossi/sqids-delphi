@@ -110,7 +110,7 @@ var options := TSqidsOptions.Create('acd123efgzxy');
 
 var sqids := TSqids.New(options);
 
-var id := sqids.Encode([1, 2, 3]);   // 'djhehd'
+var id := sqids.Encode([1, 2, 3]);   // '1x3gd2'
 ```
 
 > **Note**
@@ -125,7 +125,7 @@ var options := TSqidsOptions.Create('acd123efgzxy', 5);
 
 var sqids := TSqids.New(options);
 
-var id := sqids.Encode([1, 2, 3]);   // 'djhehd'
+var id := sqids.Encode([1]);   // 'cx13a'
 ```
 
 #### Custom Blocklist:
