@@ -5,10 +5,10 @@ interface
 uses
   System.SysUtils, System.Classes, Vcl.Graphics, Vcl.Controls, Vcl.Forms,
   Vcl.Dialogs, Vcl.StdCtrls, System.ImageList, Vcl.ImgList, Vcl.ExtCtrls,
-  System.Generics.Collections,
+  Vcl.Buttons, System.Generics.Collections,
 
   Sqids.Classes,
-  Sqids.Blocklist, Vcl.Buttons;
+  Sqids.Blocklist, Vcl.Imaging.pngimage;
 
 type
   TfrmMain = class(TForm)
@@ -22,12 +22,16 @@ type
     edtMinLength: TButtonedEdit;
     lblMinLength: TLabel;
     btnInputPlus: TSpeedButton;
-    btnAlphabetShuffle: TSpeedButton;
     btnAlphabetCopy: TSpeedButton;
     timerDelete: TTimer;
     lblTitle: TLabel;
+    btnAlphabetRandom: TSpeedButton;
+    btnAlphabetDefault: TSpeedButton;
+    Image1: TImage;
+    bvlMain: TBevel;
     procedure btnAlphabetCopyClick(Sender: TObject);
-    procedure btnAlphabetShuffleClick(Sender: TObject);
+    procedure btnAlphabetDefaultClick(Sender: TObject);
+    procedure btnAlphabetRandomClick(Sender: TObject);
     procedure btnInputPlusClick(Sender: TObject);
     procedure edtMinLengthRightButtonClick(Sender: TObject);
     procedure edtOutputRightButtonClick(Sender: TObject);
@@ -56,7 +60,7 @@ var
 implementation
 
 uses
-  Vcl.Clipbrd,
+  Vcl.Clipbrd, System.Math,
   System.Threading;
 
 {$R *.dfm}
@@ -66,10 +70,23 @@ begin
   Clipboard.AsText := memoAlphabet.Lines.Text;
 end;
 
-procedure TfrmMain.btnAlphabetShuffleClick(Sender: TObject);
+procedure TfrmMain.btnAlphabetDefaultClick(Sender: TObject);
 begin
-  var LAlpha := StringReplace(memoAlphabet.Lines.Text, sLineBreak, '', [rfReplaceAll]);
-  memoAlphabet.Lines.Text := TSqids.New.Shuffle(LAlpha);
+  memoAlphabet.Lines.Text := DEFAULT_ALPHABET;
+end;
+
+procedure TfrmMain.btnAlphabetRandomClick(Sender: TObject);
+begin
+  var len := Length(DEFAULT_ALPHABET);
+  var alphabet := '';
+  for var i := 0 to len do
+  begin
+    var ch := DEFAULT_ALPHABET.Chars[Random(len-1)];
+    if alphabet.IndexOf(ch) > -1 then
+      Continue;
+    alphabet := alphabet + ch;
+  end;
+  memoAlphabet.Lines.Text := alphabet;
 end;
 
 procedure TfrmMain.btnInputPlusClick(Sender: TObject);
@@ -108,6 +125,8 @@ begin
   Result.RightButton.ImageIndex := 0;
   Result.RightButton.Visible := True;
   Result.Width := 113;
+  Result.Hint := 'Delete this input';
+  result.ShowHint := True;
   Result.OnRightButtonClick := HandleInputDelete;
   Result.OnChange := DoEncode;
 
