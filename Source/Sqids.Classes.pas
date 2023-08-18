@@ -1,3 +1,13 @@
+{******************************************************************************}
+{                                                                              }
+{  Sqids: ID Hashing Library for Delphi                                        }
+{                                                                              }
+{  Copyright (c) 2023 Paolo Rossi                                              }
+{  https://github.com/paolo-rossi/sqids-delphi                                 }
+{                                                                              }
+{  Licensed under the MIT license                                              }
+{                                                                              }
+{******************************************************************************}
 unit Sqids.Classes;
 
 interface
@@ -12,6 +22,26 @@ type
   TNumbersHelper = record helper for TNumbers
   public
     function ToString(): string;
+    function IsEqual(Other: TNumbers): Boolean;
+  end;
+
+
+  /// <summary>
+  ///   Utility class to emulate (as much as possible) golang slices
+  /// </summary>
+  TSlice = class
+  public const
+    Start = 0;
+    Last = -1;
+  public
+    class function CopySlice<T>(const Slice: TArray<T>; StartIndex, EndIndex: Integer): TArray<T>; static;
+    class function CopyString(const Slice: string; StartIndex, EndIndex: Integer): string; static;
+    class function Intersection<T>(const Slice1, Slice2: TArray<T>): TArray<T>; static;
+
+    /// <summary>
+    ///   Only for simple types (not classes or records)
+    /// </summary>
+    class function DeepEqual<T>(const Slice1, Slice2: TArray<T>): Boolean; static;
   end;
 
   /// <summary>
@@ -40,18 +70,16 @@ type
 
     constructor Create(const AAlphabet: string; AMinLength: Integer); overload;
     constructor Create(const AAlphabet: string; AMinLength: Integer; const AList: TBlocklist); overload;
+    constructor Create(const AList: TBlocklist); overload;
   end;
 
   /// <summary>
   /// The Sqids encoder/decoder. This is the main class.
   /// </summary>
   TSqids = record
-  public const
-    SliceStart = 0;
-    SliceEnd = -1;
   private const
     DefaultOptions: TSqidsOptions = (
-      Alphabet: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890';
+      Alphabet: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
       MinLength: 0;
       Blocklist: nil;
     );
@@ -72,17 +100,14 @@ type
     /// It's equal to `Max UInt64`.
     /// </summary>
     MaxValue: TNumber = High(UInt64);
-  public // to be private
-    function Intersection<T>(const Slice1, Slice2: TArray<T>): TArray<T>;
-    function CopySlice<T>(const Slice: TArray<T>; StartIndex, EndIndex: Integer): TArray<T>;
-    function CopyString(const Slice: string; StartIndex, EndIndex: Integer): string;
-
+  private
     function Shuffle(const Alphabet: string): string;
     function EncodeNumbers(Numbers: TNumbers; Partitioned: Boolean = False): string;
     function ToID(Number: UInt64; const Alphabet: string): string;
     function ToNumber(const Id, Alphabet: string): TNumber;
     function HasUniqueChars(const Str: string): Boolean;
     function IsBlockedID(const Id: string): Boolean;
+
     constructor Create(const Options: TSqidsOptions);
   public
     /// <summary>
@@ -160,9 +185,9 @@ begin
 
   FMinLength := Options.MinLength;
 
-	FBlocklist := Options.Blocklist;
-	if FBlocklist = nil then
-		FBlocklist := DefaultBlocklist;
+	var blocklist := Options.Blocklist;
+	if blocklist = nil then
+		blocklist := DefaultBlocklist;
 
 	// check the length of the alphabet
 	if FAlphabetLen < 5 then
@@ -182,32 +207,17 @@ begin
 	// 3. if some words contain chars that are not in the alphabet, remove those
 	var filteredBlocklist: TBlocklist := [];
 	var alphabetChars := FAlphabet.ToCharArray;
-  for var word in FBlocklist do
+  for var word in blocklist do
   begin
 		if Length(word) >= 3 then
     begin
 			var wordChars := word.ToCharArray;
-			var intersection := Intersection<Char>(wordChars, alphabetChars);
+			var intersection := TSlice.Intersection<Char>(wordChars, alphabetChars);
 			if Length(intersection) = Length(wordChars) then
         filteredBlocklist := filteredBlocklist + [string.LowerCase(word)];
     end;
   end;
-end;
-
-function TSqids.CopySlice<T>(const Slice: TArray<T>; StartIndex, EndIndex: Integer): TArray<T>;
-begin
-  if EndIndex = SliceEnd then
-    EndIndex := Length(Slice);
-
-  Result := Copy(Slice, StartIndex, EndIndex - StartIndex);
-end;
-
-function TSqids.CopyString(const Slice: string; StartIndex, EndIndex: Integer): string;
-begin
-  if EndIndex = SliceEnd then
-    EndIndex := Length(Slice);
-
-  Result := Slice.Substring(StartIndex, EndIndex - StartIndex);
+  FBlocklist := filteredBlocklist;
 end;
 
 function TSqids.Decode(Id: string): TNumbers;
@@ -223,15 +233,15 @@ begin
 
 	var prefix := id.Chars[0];
 	var offset := FAlphabet.IndexOf(prefix);
-  var alphabet := CopyString(FAlphabet, offset, SliceEnd) + CopyString(FAlphabet, SliceStart, offset);
+  var alphabet := TSlice.CopyString(FAlphabet, offset, TSlice.Last) + TSlice.CopyString(FAlphabet, TSlice.Start, offset);
 	var partition := alphabet.Chars[1];
-	alphabet := CopyString(alphabet, 2, SliceEnd);
-  id := CopyString(id, 1, SliceEnd);
+	alphabet := TSlice.CopyString(alphabet, 2, TSlice.Last);
+  id := TSlice.CopyString(id, 1, TSlice.Last);
 
 	var partitionIndex := id.IndexOf(partition);
 	if (partitionIndex > 0) and (partitionIndex < (Length(id)-1)) then
   begin
-		id := CopyString(id, partitionIndex+1, SliceEnd);
+		id := TSlice.CopyString(id, partitionIndex+1, TSlice.Last);
 		alphabet := Shuffle(alphabet);
   end;
 
@@ -242,14 +252,14 @@ begin
 
     if Length(chunks) > 0 then
     begin
-			var alphabetWithoutSeparator := CopyString(alphabet, SliceStart, Length(alphabet)-1);
+			var alphabetWithoutSeparator := TSlice.CopyString(alphabet, TSlice.Start, Length(alphabet)-1);
       Result := Result + [ToNumber(chunks[0], alphabetWithoutSeparator)];
 
 			if Length(chunks) > 1 then
 				alphabet := Shuffle(alphabet);
     end;
 
-    chunks := CopySlice<string>(chunks, 1, SliceEnd);
+    chunks := TSlice.CopySlice<string>(chunks, 1, TSlice.Last);
     id := string.Join(separator, chunks);
   end;
 end;
@@ -299,16 +309,16 @@ begin
   end;
 	offset := offset mod FAlphabetLen;
 
-  var alphabet := CopyString(FAlphabet, offset, SliceEnd) + CopyString(FAlphabet, SliceStart, offset);
+  var alphabet := TSlice.CopyString(FAlphabet, offset, TSlice.Last) + TSlice.CopyString(FAlphabet, TSlice.Start, offset);
 	var prefix := alphabet.Chars[0];
 	var partition := alphabet.Chars[1];
-	alphabet :=  CopyString(alphabet, 2, SliceEnd);
+	alphabet :=  TSlice.CopyString(alphabet, 2, TSlice.Last);
 
   var ret: string := prefix;
 
 	for var j := 0 to Length(Numbers) - 1 do
   begin
-		var alphabetWithoutSeparator := CopyString(alphabet, SliceStart, Length(alphabet)-1);
+		var alphabetWithoutSeparator := TSlice.CopyString(alphabet, TSlice.Start, Length(alphabet)-1);
 		ret := ret + ToID(Numbers[j], alphabetWithoutSeparator);
 
 		if j < Length(Numbers) - 1 then
@@ -335,9 +345,9 @@ begin
 		end;
 
     if FMinLength > Length(id) then
-			id := CopyString(id, SliceStart, 1) +
-        CopyString(alphabet, SliceStart, FMinLength - Length(id)) +
-        CopyString(id, 1, SliceEnd);
+			id := TSlice.CopyString(id, TSlice.Start, 1) +
+        TSlice.CopyString(alphabet, TSlice.Start, FMinLength - Length(id)) +
+        TSlice.CopyString(id, 1, TSlice.Last);
   end;
 
   // Gestione Blocklist
@@ -370,22 +380,6 @@ begin
     end;
   finally
     chars.Free;
-  end;
-end;
-
-function TSqids.Intersection<t>(const Slice1, Slice2: TArray<T>): TArray<T>;
-begin
-	Result := [];
-  var intersectionSet := TDictionary<T, Boolean>.Create;
-  try
-    for var el in Slice2 do
-      intersectionSet.Add(el, True);
-
-    for var el in Slice1 do
-      if intersectionSet.ContainsKey(el) then
-        Result := Result + [el];
-  finally
-    intersectionSet.Free;
   end;
 end;
 
@@ -463,7 +457,7 @@ end;
 
 class function TSqids.New: TSqids;
 begin
-  Result := New(DefaultOptions);
+  Result := TSqids.Create(DefaultOptions);
 end;
 
 { TSqidsOptions }
@@ -473,15 +467,37 @@ begin
   Create(AAlphabet, AMinLength, nil);
 end;
 
-constructor TSqidsOptions.Create(const AAlphabet: string; AMinLength: Integer;
-  const AList: TBlocklist);
+constructor TSqidsOptions.Create(const AAlphabet: string; AMinLength: Integer; const AList: TBlocklist);
 begin
   Alphabet := AAlphabet;
   MinLength := AMinLength;
   Blocklist := AList;
 end;
 
+constructor TSqidsOptions.Create(const AList: TBlocklist);
+begin
+  Alphabet := '';
+  MinLength := 0;
+  Blocklist := AList;
+end;
+
 { TNumbersHelper }
+
+function TNumbersHelper.IsEqual(Other: TNumbers): Boolean;
+begin
+	if (Self = nil) or (Other = nil) then
+		Exit(Self = Other);
+
+  if Length(Self) <> Length(Other) then
+    Exit(False);
+
+  for var i := 0 to Length(Self) - 1 do
+  begin
+    if Self[i] <> Other[i] then
+      Exit(False);
+  end;
+  Result := True;
+end;
 
 function TNumbersHelper.ToString: string;
 begin
@@ -490,6 +506,61 @@ begin
     Result := Result + num.ToString + ', ';
 
   Result := Result.Remove(Length(Result) -2) + ']';
+end;
+
+class function TSlice.CopySlice<T>(const Slice: TArray<T>; StartIndex,
+    EndIndex: Integer): TArray<T>;
+begin
+  if EndIndex = TSlice.Last then
+    EndIndex := Length(Slice);
+
+  Result := Copy(Slice, StartIndex, EndIndex - StartIndex);
+end;
+
+class function TSlice.CopyString(const Slice: string; StartIndex,
+    EndIndex: Integer): string;
+begin
+  if EndIndex = TSlice.Last then
+    EndIndex := Length(Slice);
+
+  Result := Slice.Substring(StartIndex, EndIndex - StartIndex);
+end;
+
+class function TSlice.DeepEqual<T>(const Slice1, Slice2: TArray<T>): Boolean;
+begin
+	if (Slice1 = nil) or (Slice2 = nil) then
+		Exit(Slice1 = Slice2);
+
+  if Length(Slice1) <> Length(Slice2) then
+    Exit(False);
+
+  for var i := 0 to Length(Slice1) - 1 do
+  begin
+    if Slice1[i] <> Slice2[i] then
+    begin
+{
+      Exit(False);
+}
+    end;
+  end;
+  Result := True;
+end;
+
+class function TSlice.Intersection<T>(const Slice1, Slice2: TArray<T>):
+    TArray<T>;
+begin
+  Result := [];
+  var intersectionSet := TDictionary<T, Boolean>.Create;
+  try
+    for var el in Slice2 do
+      intersectionSet.Add(el, True);
+
+    for var el in Slice1 do
+      if intersectionSet.ContainsKey(el) then
+        Result := Result + [el];
+  finally
+    intersectionSet.Free;
+  end;
 end;
 
 end.

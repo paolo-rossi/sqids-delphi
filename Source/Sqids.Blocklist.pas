@@ -1,3 +1,13 @@
+{******************************************************************************}
+{                                                                              }
+{  Sqids: ID Hashing Library for Delphi                                        }
+{                                                                              }
+{  Copyright (c) 2023 Paolo Rossi                                              }
+{  https://github.com/paolo-rossi/sqids-delphi                                 }
+{                                                                              }
+{  Licensed under the MIT license                                              }
+{                                                                              }
+{******************************************************************************}
 unit Sqids.Blocklist;
 
 interface
