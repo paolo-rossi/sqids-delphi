@@ -77,17 +77,13 @@ type
   /// The Sqids encoder/decoder. This is the main class.
   /// </summary>
   TSqids = record
-  private const
-    DefaultOptions: TSqidsOptions = (
-      Alphabet: 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-      MinLength: 0;
-      Blocklist: nil;
-    );
   private
     FAlphabet: string;
     FAlphabetLen: Integer;
     FMinLength: Integer;
     FBlocklist: TBlocklist;
+  private
+    class function DefaultOptions: TSqidsOptions; static;
   public const
     /// <summary>
     /// The minimum numeric value that can be encoded/decoded using <see cref="TSqids" />.
@@ -241,6 +237,13 @@ begin
 		Result := Result + Ord(Alphabet.Chars[Numbers[i] mod UInt64(len)]) + i;
   end;
 	Result := Result mod len;
+end;
+
+class function TSqids.DefaultOptions: TSqidsOptions;
+begin
+  Result.Alphabet := 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  Result.MinLength := 0;
+  Result.Blocklist := nil;
 end;
 
 function TSqids.Decode(Id: string): TNumbers;
