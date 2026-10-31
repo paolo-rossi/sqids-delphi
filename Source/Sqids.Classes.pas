@@ -125,6 +125,9 @@ type
     /// </param>
     class function New(const Options: TSqidsOptions): TSqids; overload; static;
 
+    class function FilterBlocklist(const Alphabet: string; const Blocklist: TBlocklist): TBlocklist; static;
+    class function CalculateOffset(const Alphabet: string; const Numbers: TNumbers): Integer; static;
+
     /// <summary>
     /// Encodes a collection of numbers into a Sqids ID.
     /// </summary>
@@ -185,9 +188,10 @@ begin
 
   FMinLength := Options.MinLength;
 
-	var blocklist := Options.Blocklist;
-	if blocklist = nil then
-		blocklist := DefaultBlocklist;
+	// check that the alphabet does not contain multibyte characters
+	for var c in FAlphabet do
+		if Ord(c) > 127 then
+			raise Exception.Create('alphabet must not contain any multibyte characters');
 
 	// check the length of the alphabet
 	if FAlphabetLen < 5 then
@@ -201,23 +205,42 @@ begin
 	if (FMinLength < int(MinValue)) or (FMinLength > Length(FAlphabet)) then
 		raise Exception.CreateFmt('minimum length has to be between %d and %d', [MinValue, Length(FAlphabet)]);
 
+  FBlocklist := FilterBlocklist(FAlphabet, Options.Blocklist);
+end;
+
+class function TSqids.FilterBlocklist(const Alphabet: string; const Blocklist: TBlocklist): TBlocklist;
+begin
 	// clean up blocklist:
 	// 1. all blocklist words should be lowercase
 	// 2. no words less than 3 chars
 	// 3. if some words contain chars that are not in the alphabet, remove those
-	var filteredBlocklist: TBlocklist := [];
-	var alphabetChars := FAlphabet.ToCharArray;
-  for var word in blocklist do
+	Result := [];
+	var alphabetChars := Alphabet.ToLower.ToCharArray;
+  for var word in Blocklist do
   begin
 		if Length(word) >= 3 then
     begin
-			var wordChars := word.ToCharArray;
+			var wordChars := word.ToLower.ToCharArray;
 			var intersection := TSlice.Intersection<Char>(wordChars, alphabetChars);
 			if Length(intersection) = Length(wordChars) then
-        filteredBlocklist := filteredBlocklist + [string.LowerCase(word)];
+        Result := Result + [string.LowerCase(word)];
     end;
   end;
-  FBlocklist := filteredBlocklist;
+end;
+
+class function TSqids.CalculateOffset(const Alphabet: string; const Numbers: TNumbers): Integer;
+begin
+	Result := Length(Numbers);
+	var len := Length(Alphabet);
+
+	if (Result = 0) or (len = 0) then
+		Exit(-1);
+
+	for var i := 0 to Length(Numbers) - 1 do
+  begin
+		Result := Result + Ord(Alphabet.Chars[Numbers[i] mod UInt64(len)]) + i;
+  end;
+	Result := Result mod len;
 end;
 
 function TSqids.Decode(Id: string): TNumbers;
@@ -227,7 +250,7 @@ begin
 	if id = '' then
 		Exit(Result);
 
-  for var c in FAlphabet do
+  for var c in id do
     if not FAlphabet.Contains(c) then
       Exit(Result);
 
@@ -253,6 +276,14 @@ begin
     if Length(chunks) > 0 then
     begin
 			var alphabetWithoutSeparator := TSlice.CopyString(alphabet, TSlice.Start, Length(alphabet)-1);
+
+      if chunks[0] = '' then
+        Exit(nil);
+
+      for var c in chunks[0] do
+        if not alphabetWithoutSeparator.Contains(c) then
+          Exit(nil);
+
       Result := Result + [ToNumber(chunks[0], alphabetWithoutSeparator)];
 
 			if Length(chunks) > 1 then
@@ -301,13 +332,7 @@ end;
 
 function TSqids.EncodeNumbers(Numbers: TNumbers; Partitioned: Boolean): string;
 begin
-	var offset := Length(Numbers);
-
-	for var i := 0 to Length(Numbers) - 1 do
-  begin
-		offset := offset + Ord(FAlphabet.Chars[Numbers[i] mod UInt64(FAlphabetLen)]) + i;
-  end;
-	offset := offset mod FAlphabetLen;
+	var offset := CalculateOffset(FAlphabet, Numbers);
 
   var alphabet := TSlice.CopyString(FAlphabet, offset, TSlice.Last) + TSlice.CopyString(FAlphabet, TSlice.Start, offset);
 	var prefix := alphabet.Chars[0];
@@ -457,14 +482,14 @@ end;
 
 class function TSqids.New: TSqids;
 begin
-  Result := TSqids.Create(DefaultOptions);
+  Result := TSqids.Create(TSqidsOptions.Create(DefaultOptions.Alphabet, DefaultOptions.MinLength));
 end;
 
 { TSqidsOptions }
 
 constructor TSqidsOptions.Create(const AAlphabet: string; AMinLength: Integer);
 begin
-  Create(AAlphabet, AMinLength, nil);
+  Create(AAlphabet, AMinLength, DefaultBlocklist);
 end;
 
 constructor TSqidsOptions.Create(const AAlphabet: string; AMinLength: Integer; const AList: TBlocklist);
@@ -553,7 +578,7 @@ begin
   var intersectionSet := TDictionary<T, Boolean>.Create;
   try
     for var el in Slice2 do
-      intersectionSet.Add(el, True);
+      intersectionSet.AddOrSetValue(el, True);
 
     for var el in Slice1 do
       if intersectionSet.ContainsKey(el) then

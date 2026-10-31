@@ -59,6 +59,18 @@ type
     [TestCase('TestShortBlocklistMatch', '[1000];[pPQ]', ';')]
     procedure TestShortBlocklistMatch(Numbers: TNumbers; const List: TBlocklist);
 
+    [Test]
+    procedure TestBlocklistFunction;
+
+    [Test]
+    [TestCase('TestUpperCaseAlphabetBlocklistFiltering', '[1,2,3];ULPBZGBM;ABCDEFGHIJKLMNOPQRSTUVWXYZ;[sqnmpn]', ';')]
+    procedure TestUpperCaseAlphabetBlocklistFiltering(Numbers: TNumbers; const Id, Alphabet: string; const List: TBlocklist);
+
+    [Test]
+    [TestCase('NoWordsLessThan3Chars', 'YESNO;[yes,no];yes', ';')]
+    [TestCase('RemoveWordsNotInAlphabet', 'YESNO;[yes,nope];yes', ';')]
+    procedure TestFilterBlocklist(const Alphabet: string; const List: TBlocklist; const Expected: string);
+
   end;
 
 implementation
@@ -176,6 +188,47 @@ begin
 	var decodedNumbers := s.Decode(generatedID);
 	if not numbers.IsEqual(decodedNumbers) then
   	Assert.FailFmt(ERR_DECODING, [generatedID, numbers.ToString, decodedNumbers.ToString]);
+end;
+
+procedure TTestBlocklist.TestBlocklistFunction;
+begin
+  var defaultList := Blocklist([]);
+  var customList := Blocklist(['custom1', 'custom2']);
+
+	if Length(defaultList) <> Length(DefaultBlocklist) then
+  	Assert.FailFmt('Length(defaultBlocklist) = %d, want %d', [Length(defaultList), Length(DefaultBlocklist)]);
+
+	if Length(customList) <> Length(defaultList) + 2 then
+  	Assert.FailFmt('Length(customBlocklist) = %d, want %d', [Length(customList), Length(defaultList) + 2]);
+end;
+
+procedure TTestBlocklist.TestUpperCaseAlphabetBlocklistFiltering(Numbers: TNumbers;
+  const Id, Alphabet: string; const List: TBlocklist);
+begin
+  var options := TSqidsOptions.Create(Alphabet, 0, List);
+	var s := TSqids.New(options);
+
+	var generatedID := s.Encode(numbers);
+	var decodedNumbers := s.Decode(id);
+
+	// without blocklist, would've been "SQNMPN"
+	if id <> generatedID then
+  	Assert.FailFmt(ERR_ENCODING, [numbers.ToString, id, generatedID]);
+
+	if not numbers.IsEqual(decodedNumbers) then
+  	Assert.FailFmt(ERR_DECODING, [generatedID, numbers.ToString, decodedNumbers.ToString]);
+end;
+
+procedure TTestBlocklist.TestFilterBlocklist(const Alphabet: string;
+  const List: TBlocklist; const Expected: string);
+begin
+  var filtered := TSqids.FilterBlocklist(Alphabet, List);
+
+	if Length(filtered) <> 1 then
+  	Assert.FailFmt('Length(filtered) = %d, want %d', [Length(filtered), 1]);
+
+	if filtered[0] <> Expected then
+  	Assert.FailFmt('filtered[0] = %s, want %s', [filtered[0], Expected]);
 end;
 
 initialization

@@ -579,6 +579,15 @@ const
     'zoccola'
   ];
 
+function Blocklist(const Words: array of string): TBlocklist;
+
 implementation
+
+function Blocklist(const Words: array of string): TBlocklist;
+begin
+  Result := Copy(DefaultBlocklist);
+  for var word in Words do
+    Result := Result + [word];
+end;
 
 end.

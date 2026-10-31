@@ -24,11 +24,12 @@ uses
   DUnitX.Loggers.Xml.NUnit,
   {$ENDIF }
   DUnitX.TestFramework,
-  Sqids.Tests.Alphabet in 'Source\Sqids.Tests.Alphabet.pas',
   Sqids.Tests.Blocklist in 'Source\Sqids.Tests.Blocklist.pas',
+  Sqids.Tests.Alphabet in 'Source\Sqids.Tests.Alphabet.pas',
   Sqids.Tests.Encoding in 'Source\Sqids.Tests.Encoding.pas',
-  Sqids.Tests.Uniqueness in 'Source\Sqids.Tests.Uniqueness.pas',
   Sqids.Tests.MinLength in 'Source\Sqids.Tests.MinLength.pas',
+  Sqids.Tests.Uniqueness in 'Source\Sqids.Tests.Uniqueness.pas',
+  Sqids.Tests.Sqids in 'Source\Sqids.Tests.Sqids.pas',
   Sqids.Classes in '..\Source\Sqids.Classes.pas',
   Sqids.Blocklist in '..\Source\Sqids.Blocklist.pas';
 
