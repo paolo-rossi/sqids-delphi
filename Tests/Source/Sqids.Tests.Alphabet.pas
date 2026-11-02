@@ -36,11 +36,11 @@ type
     procedure TestMultibyteAlphabet;
 
     [Test]
-    [TestCase('TestAlphabetSimple', '[1,2,3];4d9fd2;0123456789abcdef', ';')]
+    [TestCase('TestAlphabetSimple', '[1,2,3];489158;0123456789abcdef', ';')]
     procedure TestAlphabetSimple(Numbers: TNumbers; const Id, Alphabet: string);
 
     [Test]
-    [TestCase('TestAlphabetShort', '[1,2,3];abcde', ';')]
+    [TestCase('TestAlphabetShort', '[1,2,3];abc', ';')]
     procedure TestAlphabetShort(Numbers: TNumbers; const Alphabet: string);
 
     [Test]
@@ -51,7 +51,7 @@ type
     procedure TestRepeatingAlphabetCharacters(const Alphabet: string);
 
     [Test]
-    [TestCase('TestTooShortOfAnAlphabet', 'abcd')]
+    [TestCase('TestTooShortOfAnAlphabet', 'ab')]
     procedure TestTooShortOfAnAlphabet(const Alphabet: string);
 
   end;

@@ -36,40 +36,43 @@ type
     procedure TearDown;
 
     [Test]
-    [TestCase('TestBlocklistDefault', '[200044],sexy,d171vI')]
+    [TestCase('TestBlocklistDefault', '[4572721],aho1e,JExTR')]
     procedure TestBlocklistDefault(Numbers: TNumbers; const BlockedID, UnblockedID: string);
 
     [Test]
-    [TestCase('TestBlocklistEmpty', '[200044],sexy,[]')]
+    [TestCase('TestBlocklistEmpty', '[4572721],aho1e,[]')]
     procedure TestBlocklistEmpty(Numbers: TNumbers; const Id: string; const List: TBlocklist);
 
     [Test]
-    [TestCase('TestBlocklistNotEmpty', '[200044],sexy,7T1X8k,[AvTg]')]
+    [TestCase('TestBlocklistNotEmpty', '[4572721],aho1e,QyG4,[ArUO]')]
     procedure TestBlocklistNotEmpty(Numbers: TNumbers; const Id, ExpectedId: string; const List: TBlocklist);
 
     [Test]
-    [TestCase('TestBlocklist', '[1,2,3];TM0x1Mxz', ';')]
+    [TestCase('TestBlocklist', '[1000000,2000000];1aYeB7bRUt', ';')]
     procedure TestBlocklist(Numbers: TNumbers; const Id: string);
 
     [Test]
-    [TestCase('TestDecodingBlocklistedIDs', '[1,2,3];[8QRLaD,7T1cd0dL,RA8UeIe7,WM3Limhw,LfUQh4HN]', ';')]
+    [TestCase('TestDecodingBlocklistedIDs', '[1,2,3];[86Rf07,se8ojk,ARsz1p,Q8AI49,5sQRZO]', ';')]
     procedure TestDecodingBlocklistedIDs(Numbers: TNumbers; const List: TBlocklist);
 
     [Test]
-    [TestCase('TestShortBlocklistMatch', '[1000];[pPQ]', ';')]
+    [TestCase('TestShortBlocklistMatch', '[1000];[pnd]', ';')]
     procedure TestShortBlocklistMatch(Numbers: TNumbers; const List: TBlocklist);
 
     [Test]
     procedure TestBlocklistFunction;
 
     [Test]
-    [TestCase('TestUpperCaseAlphabetBlocklistFiltering', '[1,2,3];ULPBZGBM;ABCDEFGHIJKLMNOPQRSTUVWXYZ;[sqnmpn]', ';')]
+    [TestCase('TestUpperCaseAlphabetBlocklistFiltering', '[1,2,3];IBSHOZ;ABCDEFGHIJKLMNOPQRSTUVWXYZ;[sxnzkl]', ';')]
     procedure TestUpperCaseAlphabetBlocklistFiltering(Numbers: TNumbers; const Id, Alphabet: string; const List: TBlocklist);
 
     [Test]
     [TestCase('NoWordsLessThan3Chars', 'YESNO;[yes,no];yes', ';')]
     [TestCase('RemoveWordsNotInAlphabet', 'YESNO;[yes,nope];yes', ';')]
     procedure TestFilterBlocklist(const Alphabet: string; const List: TBlocklist; const Expected: string);
+
+    [Test]
+    procedure TestMaxEncodingAttempts;
 
   end;
 
@@ -90,11 +93,11 @@ end;
 procedure TTestBlocklist.TestBlocklist(Numbers: TNumbers; const Id: string);
 begin
   var options := TSqidsOptions.Create([
-    '8QRLaD',   // normal result of 1st encoding, let's block that word on purpose
-    '7T1cd0dL', // result of 2nd encoding
-    'UeIe',     // result of 3rd encoding is 'RA8UeIe7', let's block a substring
-    'imhw',     // result of 4th encoding is 'WM3Limhw', let's block the postfix
-    'LfUQ'      // result of 4th encoding is 'LfUQh4HN', let's block the prefix
+    'JSwXFaosAN', // normal result of 1st encoding, let's block that word on purpose
+    'OCjV9JK64o', // result of 2nd encoding
+    'rBHf',       // result of 3rd encoding is '4rBHfOiqd3', let's block a substring
+    '79SM',       // result of 4th encoding is 'dyhgw479SM', let's block the postfix
+    '7tE6'        // result of 4th encoding is '7tE6jdAHLe', let's block the prefix
   ]);
 	var s := TSqids.New(options);
 
@@ -211,7 +214,7 @@ begin
 	var generatedID := s.Encode(numbers);
 	var decodedNumbers := s.Decode(id);
 
-	// without blocklist, would've been "SQNMPN"
+	// without blocklist, would've been "SXNZKL"
 	if id <> generatedID then
   	Assert.FailFmt(ERR_ENCODING, [numbers.ToString, id, generatedID]);
 
@@ -229,6 +232,25 @@ begin
 
 	if filtered[0] <> Expected then
   	Assert.FailFmt('filtered[0] = %s, want %s', [filtered[0], Expected]);
+end;
+
+procedure TTestBlocklist.TestMaxEncodingAttempts;
+begin
+  var alphabet := 'abc';
+  var minLength := 3;
+  var blocklist: TBlocklist := ['cab', 'abc', 'bca'];
+
+  var s := TSqids.New(TSqidsOptions.Create(alphabet, minLength, blocklist));
+
+  if (Length(alphabet) <> minLength) or (Length(blocklist) <> minLength) then
+    Assert.Fail('TestMaxEncodingAttempts is not setup properly');
+
+  Assert.WillRaise(
+    procedure
+    begin
+      s.Encode([0]);
+    end,
+    Exception, 'Should throw error about max regeneration attempts');
 end;
 
 initialization

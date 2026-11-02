@@ -36,49 +36,49 @@ type
     procedure TearDown;
 
     [Test]
-    [TestCase('TestEncodingSimple', '[1,2,3]', ';')]
-    procedure TestEncodingSimple(Numbers: TNumbers);
+    [TestCase('TestEncodingSimple', '[1,2,3];86Rf07', ';')]
+    procedure TestEncodingSimple(Numbers: TNumbers; const Id: string);
 
     [Test]
     procedure TestEncodingDifferentInputs;
 
     [Test]
-    [TestCase('bV', 'bV;[0]', ';')]
-    [TestCase('U9', 'U9;[1]', ';')]
-    [TestCase('g8', 'g8;[2]', ';')]
-    [TestCase('Ez', 'Ez;[3]', ';')]
-    [TestCase('V8', 'V8;[4]', ';')]
-    [TestCase('ul', 'ul;[5]', ';')]
-    [TestCase('O3', 'O3;[6]', ';')]
-    [TestCase('AF', 'AF;[7]', ';')]
-    [TestCase('ph', 'ph;[8]', ';')]
-    [TestCase('n8', 'n8;[9]', ';')]
+    [TestCase('bM', 'bM;[0]', ';')]
+    [TestCase('Uk', 'Uk;[1]', ';')]
+    [TestCase('gb', 'gb;[2]', ';')]
+    [TestCase('Ef', 'Ef;[3]', ';')]
+    [TestCase('Vq', 'Vq;[4]', ';')]
+    [TestCase('uw', 'uw;[5]', ';')]
+    [TestCase('OI', 'OI;[6]', ';')]
+    [TestCase('AX', 'AX;[7]', ';')]
+    [TestCase('p6', 'p6;[8]', ';')]
+    [TestCase('nJ', 'nJ;[9]', ';')]
     procedure TestEncodingIncrementalNumbers(const Id: string; Numbers: TNumbers);
 
     [Test]
-    [TestCase('SrIu', 'SrIu;[0,0]', ';')]
-    [TestCase('nZqE', 'nZqE;[0,1]', ';')]
-    [TestCase('tJyf', 'tJyf;[0,2]', ';')]
-    [TestCase('e86S', 'e86S;[0,3]', ';')]
-    [TestCase('rtC7', 'rtC7;[0,4]', ';')]
-    [TestCase('sQ8R', 'sQ8R;[0,5]', ';')]
-    [TestCase('uz2n', 'uz2n;[0,6]', ';')]
-    [TestCase('7Td9', '7Td9;[0,7]', ';')]
-    [TestCase('3nWE', '3nWE;[0,8]', ';')]
-    [TestCase('mIxM', 'mIxM;[0,9]', ';')]
+    [TestCase('SvIz', 'SvIz;[0,0]', ';')]
+    [TestCase('n3qa', 'n3qa;[0,1]', ';')]
+    [TestCase('tryF', 'tryF;[0,2]', ';')]
+    [TestCase('eg6q', 'eg6q;[0,3]', ';')]
+    [TestCase('rSCF', 'rSCF;[0,4]', ';')]
+    [TestCase('sR8x', 'sR8x;[0,5]', ';')]
+    [TestCase('uY2M', 'uY2M;[0,6]', ';')]
+    [TestCase('74dI', '74dI;[0,7]', ';')]
+    [TestCase('30WX', '30WX;[0,8]', ';')]
+    [TestCase('moxr', 'moxr;[0,9]', ';')]
     procedure TestEncodingIncrementalNumbersSameIndex0(const Id: string; Numbers: TNumbers);
 
     [Test]
-    [TestCase('SrIu', 'SrIu;[0,0]', ';')]
-    [TestCase('nbqh', 'nbqh;[1,0]', ';')]
-    [TestCase('t4yj', 't4yj;[2,0]', ';')]
-    [TestCase('eQ6L', 'eQ6L;[3,0]', ';')]
-    [TestCase('r4Cc', 'r4Cc;[4,0]', ';')]
-    [TestCase('sL82', 'sL82;[5,0]', ';')]
-    [TestCase('uo2f', 'uo2f;[6,0]', ';')]
-    [TestCase('7Zdq', '7Zdq;[7,0]', ';')]
-    [TestCase('36Wf', '36Wf;[8,0]', ';')]
-    [TestCase('m4xT', 'm4xT;[9,0]', ';')]
+    [TestCase('SvIz', 'SvIz;[0,0]', ';')]
+    [TestCase('nWqP', 'nWqP;[1,0]', ';')]
+    [TestCase('tSyw', 'tSyw;[2,0]', ';')]
+    [TestCase('eX68', 'eX68;[3,0]', ';')]
+    [TestCase('rxCY', 'rxCY;[4,0]', ';')]
+    [TestCase('sV8a', 'sV8a;[5,0]', ';')]
+    [TestCase('uf2K', 'uf2K;[6,0]', ';')]
+    [TestCase('7Cdk', '7Cdk;[7,0]', ';')]
+    [TestCase('3aWP', '3aWP;[8,0]', ';')]
+    [TestCase('m2xn', 'm2xn;[9,0]', ';')]
     procedure TestEncodingIncrementalNumbersSameIndex1(const Id: string; Numbers: TNumbers);
 
     [Test]
@@ -92,7 +92,6 @@ type
 
     [Test]
     [TestCase('TestEncodingInvalidCharacter', '*')]
-    [TestCase('TestDecodeInvalidIDWithRepeatingReservedCharacter', 'fff')]
     procedure TestDecodeInvalid(const Id: string);
 
   end;
@@ -124,12 +123,15 @@ begin
   	Assert.FailFmt(ERR_DECODING, [id, numbers.ToString, decodedNumbers.ToString]);
 end;
 
-procedure TTestEncoding.TestEncodingSimple(Numbers: TNumbers);
+procedure TTestEncoding.TestEncodingSimple(Numbers: TNumbers; const Id: string);
 begin
 	var s := TSqids.New();
 
-	var id := s.Encode(numbers);
-	var decodedNumbers := s.Decode(id);
+	var generatedID := s.Encode(numbers);
+	if id <> generatedID then
+  	Assert.FailFmt(ERR_ENCODING, [numbers.ToString, id, generatedID]);
+
+	var decodedNumbers := s.Decode(generatedID);
 	if not numbers.IsEqual(decodedNumbers) then
   	Assert.FailFmt(ERR_ENCODE_DECODE, [numbers.ToString]);
 end;

@@ -13,7 +13,7 @@ unit Sqids.Classes;
 interface
 
 uses
-  System.SysUtils, System.Generics.Collections,
+  System.SysUtils, System.StrUtils, System.Math, System.Generics.Collections,
   Sqids.Types, Sqids.Blocklist;
 
 type
@@ -33,7 +33,7 @@ type
   TSqidsOptions = record
     /// <summary>
     /// Custom alphabet that will be used for the IDs.
-    /// Must contain at least 5 characters.
+    /// Must contain at least 3 unique ASCII characters.
     /// The default is lowercase letters, uppercase letters, and digits.
     /// </summary>
     Alphabet: string;
@@ -41,6 +41,7 @@ type
     /// <summary>
     /// The minimum length for the IDs.
     /// The default is 0; meaning the IDs will be as short as possible.
+    /// Must be between 0 and 255.
     /// </summary>
     MinLength: Integer;
 
@@ -86,9 +87,20 @@ type
     /// It's equal to `Max UInt64`.
     /// </summary>
     MaxValue: TNumber = High(UInt64);
+
+    /// <summary>
+    /// The minimum alphabet length accepted by <see cref="TSqids" />.
+    /// </summary>
+    MinAlphabetLength = 3;
+
+    /// <summary>
+    /// The maximum value accepted for <see cref="TSqidsOptions.MinLength" />
+    /// (MinLength is an 8-bit unsigned value in the Sqids spec).
+    /// </summary>
+    MaxMinLength = 255;
   private
     function Shuffle(const Alphabet: string): string;
-    function EncodeNumbers(Numbers: TNumbers; Partitioned: Boolean = False): string;
+    function EncodeNumbers(const Numbers: TNumbers; Increment: Integer): string;
     function ToID(Number: UInt64; const Alphabet: string): string;
     function ToNumber(const Id, Alphabet: string): TNumber;
     function HasUniqueChars(const Str: string): Boolean;
@@ -112,7 +124,7 @@ type
     class function New(const Options: TSqidsOptions): TSqids; overload; static;
 
     class function FilterBlocklist(const Alphabet: string; const Blocklist: TBlocklist): TBlocklist; static;
-    class function CalculateOffset(const Alphabet: string; const Numbers: TNumbers): Integer; static;
+    class function CalculateOffset(const Alphabet: string; const Numbers: TNumbers; Increment: Integer = 0): Integer; static;
 
     /// <summary>
     /// Encodes a collection of numbers into a Sqids ID.
@@ -180,16 +192,16 @@ begin
 			raise Exception.Create('alphabet must not contain any multibyte characters');
 
 	// check the length of the alphabet
-	if FAlphabetLen < 5 then
-		raise Exception.Create('alphabet length must be at least 5');
+	if FAlphabetLen < MinAlphabetLength then
+		raise Exception.CreateFmt('alphabet length must be at least %d', [MinAlphabetLength]);
 
 	// check that the alphabet has only unique characters
 	if not HasUniqueChars(FAlphabet) then
 		raise Exception.Create('alphabet must contain unique characters');
 
-	// test min length (type [might be lang-specific] + min length + max length)
-	if (FMinLength < int(MinValue)) or (FMinLength > Length(FAlphabet)) then
-		raise Exception.CreateFmt('minimum length has to be between %d and %d', [MinValue, Length(FAlphabet)]);
+	// MinLength is a uint8 in the reference implementation
+	if (FMinLength < 0) or (FMinLength > MaxMinLength) then
+		raise Exception.CreateFmt('minimum length has to be between 0 and %d', [MaxMinLength]);
 
   FBlocklist := FilterBlocklist(FAlphabet, Options.Blocklist);
 
@@ -232,7 +244,7 @@ begin
   end;
 end;
 
-class function TSqids.CalculateOffset(const Alphabet: string; const Numbers: TNumbers): Integer;
+class function TSqids.CalculateOffset(const Alphabet: string; const Numbers: TNumbers; Increment: Integer): Integer;
 begin
 	Result := Length(Numbers);
 	var len := Length(Alphabet);
@@ -241,10 +253,10 @@ begin
 		Exit(-1);
 
 	for var i := 0 to Length(Numbers) - 1 do
-  begin
 		Result := Result + Ord(Alphabet.Chars[Numbers[i] mod UInt64(len)]) + i;
-  end;
+
 	Result := Result mod len;
+	Result := (Result + Increment) mod len;
 end;
 
 class function TSqids.DefaultOptions: TSqidsOptions;
@@ -258,52 +270,53 @@ function TSqids.Decode(Id: string): TNumbers;
 begin
 	Result := [];
 
-	if id = '' then
-		Exit(Result);
+	if Id = '' then
+		Exit;
 
-  for var c in id do
-    if not FAlphabet.Contains(c) then
-      Exit(Result);
+	// if a character is not in the alphabet, return an empty array
+	for var c in Id do
+		if FAlphabet.IndexOf(c) < 0 then
+			Exit;
 
-	var prefix := id.Chars[0];
-	var offset := FAlphabet.IndexOf(prefix);
-  var alphabet := TSlice.CopyString(FAlphabet, offset, TSlice.Last) + TSlice.CopyString(FAlphabet, TSlice.Start, offset);
-	var partition := alphabet.Chars[1];
-	alphabet := TSlice.CopyString(alphabet, 2, TSlice.Last);
-  id := TSlice.CopyString(id, 1, TSlice.Last);
+	// first character is always the prefix: it gives the alphabet offset
+	var offset := FAlphabet.IndexOf(Id.Chars[0]);
+	var alphabet := ReverseString(FAlphabet.Substring(offset) + FAlphabet.Substring(0, offset));
 
-	var partitionIndex := id.IndexOf(partition);
-	if (partitionIndex > 0) and (partitionIndex < (Length(id)-1)) then
-  begin
-		id := TSlice.CopyString(id, partitionIndex+1, TSlice.Last);
-		alphabet := Shuffle(alphabet);
-  end;
+	Id := Id.Substring(1);
 
-  while Length(id) > 0 do
-  begin
-		var separator := alphabet.Chars[Length(alphabet)-1];
-		var chunks := id.Split([separator]);
+	while Id <> '' do
+	begin
+		var separator := alphabet.Chars[0];
 
-    if Length(chunks) > 0 then
-    begin
-			var alphabetWithoutSeparator := TSlice.CopyString(alphabet, TSlice.Start, Length(alphabet)-1);
+		// split off the first chunk (the rest is re-split on the next iteration,
+		// after the alphabet has been shuffled)
+		var chunk: string;
+		var rest: string;
+		var sepIndex := Id.IndexOf(separator);
+		if sepIndex < 0 then
+		begin
+			chunk := Id;
+			rest := '';
+		end
+		else
+		begin
+			chunk := Id.Substring(0, sepIndex);
+			rest := Id.Substring(sepIndex + 1);
+		end;
 
-      if chunks[0] = '' then
-        Exit(nil);
+		// an empty chunk means the ID is invalid: return what was decoded so far
+		if chunk = '' then
+			Exit;
 
-      for var c in chunks[0] do
-        if not alphabetWithoutSeparator.Contains(c) then
-          Exit(nil);
+		// decode the number without using the reserved separator character
+		Result := Result + [ToNumber(chunk, alphabet.Substring(1))];
 
-      Result := Result + [ToNumber(chunks[0], alphabetWithoutSeparator)];
+		// if this ID has multiple numbers, shuffle the alphabet like the encoder did
+		if sepIndex >= 0 then
+			alphabet := Shuffle(alphabet);
 
-			if Length(chunks) > 1 then
-				alphabet := Shuffle(alphabet);
-    end;
-
-    chunks := TSlice.CopySlice<string>(chunks, 1, TSlice.Last);
-    id := string.Join(separator, chunks);
-  end;
+		Id := rest;
+	end;
 end;
 
 function TSqids.DecodeSingle(const Id: string): TNumber;
@@ -326,75 +339,64 @@ end;
 
 function TSqids.Encode(const Numbers: TNumbers): string;
 begin
-	if Length(numbers) = 0 then
+	if Length(Numbers) = 0 then
 		Exit('');
 
 	// No range check: TNumber is UInt64, so every value is already within
-	// [MinValue, MaxValue]. Pass a copy so EncodeNumbers can never modify
-	// the caller's array.
-	Result := EncodeNumbers(Copy(Numbers), False);
+	// [MinValue, MaxValue].
+	Result := EncodeNumbers(Numbers, 0);
 end;
 
-function TSqids.EncodeNumbers(Numbers: TNumbers; Partitioned: Boolean): string;
+function TSqids.EncodeNumbers(const Numbers: TNumbers; Increment: Integer): string;
 begin
-	var offset := CalculateOffset(FAlphabet, Numbers);
+	// if Increment is greater than the alphabet length, every possible ID
+	// for these numbers has been tried and is blocked
+	if Increment > FAlphabetLen then
+		raise Exception.Create('reached max attempts to re-generate the id');
 
-  var alphabet := TSlice.CopyString(FAlphabet, offset, TSlice.Last) + TSlice.CopyString(FAlphabet, TSlice.Start, offset);
+	// the offset depends on the numbers, and changes with each re-generation attempt
+	var offset := CalculateOffset(FAlphabet, Numbers, Increment);
+	var alphabet := FAlphabet.Substring(offset) + FAlphabet.Substring(0, offset);
+
+	// the prefix is the first character of the generated ID: it's used for randomization
 	var prefix := alphabet.Chars[0];
-	var partition := alphabet.Chars[1];
-	alphabet :=  TSlice.CopyString(alphabet, 2, TSlice.Last);
 
-  var ret: string := prefix;
+	// reverse the alphabet (makes it more random)
+	alphabet := ReverseString(alphabet);
 
-	for var j := 0 to Length(Numbers) - 1 do
-  begin
-		var alphabetWithoutSeparator := TSlice.CopyString(alphabet, TSlice.Start, Length(alphabet)-1);
-		ret := ret + ToID(Numbers[j], alphabetWithoutSeparator);
+	var ret: string := prefix;
 
-		if j < Length(Numbers) - 1 then
-    begin
-			var separator: Char;
-			if partitioned and (j = 0) then
-				separator := partition
-			else
-				separator := alphabet.Chars[Length(alphabet)-1];
+	for var i := 0 to High(Numbers) do
+	begin
+		// the first character of the alphabet is reserved as separator
+		ret := ret + ToID(Numbers[i], alphabet.Substring(1));
 
-			ret := ret + separator;
-			alphabet := shuffle(alphabet);
+		if i < High(Numbers) then
+		begin
+			ret := ret + alphabet.Chars[0];
+			alphabet := Shuffle(alphabet);
 		end;
-  end;
+	end;
 
-  var id := ret;
+	var id := ret;
 
+	// handle MinLength: pad with the separator, then with shuffled alphabet chunks
 	if FMinLength > Length(id) then
-  begin
-		if not partitioned then
-    begin
-      numbers := [0] + numbers;
-			id := EncodeNumbers(numbers, True);
+	begin
+		id := id + alphabet.Chars[0];
+
+		while FMinLength - Length(id) > 0 do
+		begin
+			alphabet := Shuffle(alphabet);
+			id := id + alphabet.Substring(0, Min(FMinLength - Length(id), Length(alphabet)));
 		end;
+	end;
 
-    if FMinLength > Length(id) then
-			id := TSlice.CopyString(id, TSlice.Start, 1) +
-        TSlice.CopyString(alphabet, TSlice.Start, FMinLength - Length(id)) +
-        TSlice.CopyString(id, 1, TSlice.Last);
-  end;
+	// if the ID has a blocked word anywhere, try again with the next increment
+	if IsBlockedID(id) then
+		id := EncodeNumbers(Numbers, Increment + 1);
 
-  // Gestione Blocklist
-	if isBlockedID(id) then
-  begin
-		if partitioned then
-    begin
-			if numbers[0] + 1 > MaxValue then
-        raise Exception.Create('ran out of range checking against the blocklist');
-			numbers[0] := numbers[0] + 1;
-    end else
-			numbers := [0] + numbers;
-
-		id := EncodeNumbers(numbers, true);
-  end;
-
-  Result := id;
+	Result := id;
 end;
 
 function TSqids.HasUniqueChars(const Str: string): Boolean;

@@ -55,6 +55,15 @@ Installing Sqids-Delphi is very easy, just copy the Source folder anywhere in yo
 uses Sqids.Classes;
 ```
 
+### Sqids spec compatibility
+
+Sqids-Delphi implements the current Sqids algorithm (the same as [sqids-go v0.4.1](https://github.com/sqids/sqids-go/tree/v0.4.1)), so it generates exactly the same IDs as the other up-to-date Sqids implementations, and it passes the same test vectors.
+
+> **Warning**
+> Earlier versions of Sqids-Delphi implemented the older (pre v0.4) Sqids algorithm. IDs generated with those versions (e.g. `[1, 2, 3]` → `8QRLaD`) **cannot be decoded** by the current version (`[1, 2, 3]` → `86Rf07`), and vice versa. If you have stored old IDs, keep using the old version for them or re-generate them.
+
+Other changes from the old algorithm: the minimum alphabet length is now 3 characters (was 5), and `MinLength` can be any value from 0 to 255 (it was limited to the alphabet length).
+
 ### Delphi versions compatibility
 
 > **Disclaimer**: 
@@ -81,14 +90,14 @@ var sqids := TSqids.New;
 #### Single number:
 
 ```delphi
-var id := sqids.EncodeSingle(1);      // 'UfB'
+var id := sqids.EncodeSingle(1);      // 'Uk'
 var number := sqids.DecodeSingle(id); // 1
 ```
 
 #### Multiple numbers:
 
 ```delphi
-var id := sqids.Encode([1, 2, 3]); // '8QRLaD'
+var id := sqids.Encode([1, 2, 3]); // '86Rf07'
 var numbers := sqids.Decode(id);   // [1, 2, 3]
 ```
 
@@ -110,7 +119,7 @@ var options := TSqidsOptions.Create('acd123efgzxy', 0);
 
 var sqids := TSqids.New(options);
 
-var id := sqids.Encode([1, 2, 3]);   // '1x3gd2'
+var id := sqids.Encode([1, 2, 3]);   // '1z3dcf'
 ```
 
 > **Note**
@@ -125,7 +134,7 @@ var options := TSqidsOptions.Create('acd123efgzxy', 5);
 
 var sqids := TSqids.New(options);
 
-var id := sqids.Encode([1]);   // 'cx13a'
+var id := sqids.Encode([1]);   // 'fxa1a'
 ```
 
 #### Custom Blocklist:
