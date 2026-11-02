@@ -52,7 +52,7 @@ Delphi port of Sqids. Generate short YouTube-looking IDs from numbers
 Installing Sqids-Delphi is very easy, just copy the Source folder anywhere in your disk, point the search path to it and... you are good to go!
 
 ```delphi
-uses Sqids;
+uses Sqids.Classes;
 ```
 
 ### Delphi versions compatibility
@@ -97,16 +97,16 @@ var numbers := sqids.Decode(id);   // [1, 2, 3]
 
 ## Customizations:
 
-You can easily customize the alphabet (the characters that Sqids uses to encode the numbers), the minimum length of the IDs (how long the IDs should be at minimum), and the blocklist (the words that should not appear in the IDs), by passing an instance of `SqidsOptions` to the constructor of `SqidsEncoder`.
+You can easily customize the alphabet (the characters that Sqids uses to encode the numbers), the minimum length of the IDs (how long the IDs should be at minimum), and the blocklist (the words that should not appear in the IDs), by passing a `TSqidsOptions` record to `TSqids.New`.
 
-You can specify all the properties, and any you leave out will fall back to their default values.
+Always build the options with one of the `TSqidsOptions.Create` overloads (an uninitialized record would leave `MinLength` undefined). An empty alphabet falls back to the default one; the blocklist rules are described below.
 
 #### Custom Alphabet:
 
 You can give Sqids your own custom (ideally shuffled) alphabet to use in the IDs:
 
 ```delphi
-var options := TSqidsOptions.Create('acd123efgzxy');
+var options := TSqidsOptions.Create('acd123efgzxy', 0);
 
 var sqids := TSqids.New(options);
 
@@ -130,16 +130,23 @@ var id := sqids.Encode([1]);   // 'cx13a'
 
 #### Custom Blocklist:
 
-Sqids comes with a large default blocklist which will ensure that common curse words and such never appear anywhere in your IDs. You can add extra items to this default blocklist like so:
+Sqids comes with a large default blocklist (`DefaultBlocklist`, in `Sqids.Blocklist`) which will ensure that common curse words and such never appear anywhere in your IDs. It is used by `TSqids.New` and by `TSqidsOptions.Create(Alphabet, MinLength)`.
+
+Passing your own list **replaces** the default blocklist. To add extra words while keeping the default ones, concatenate them:
 
 ```delphi
-var options := TSqidsOptions.Create('acd123efgzxy', 5);
-options.Blocklist := ['dont', 'use', 'these', 'words'];
+uses Sqids.Classes, Sqids.Blocklist;
+
+var options := TSqidsOptions.Create('acd123efgzxy', 5,
+  DefaultBlocklist + ['dont', 'use', 'these', 'words']);
 
 var sqids := TSqids.New(options);
 
-var id := sqids.Encode([1, 2, 3]);   // 'djhehd'
+var id := sqids.Encode([1, 2, 3]);
 ```
+
+> **Warning**
+> Passing an empty list (`[]` or `nil`) disables the blocklist entirely, because Delphi cannot tell an empty dynamic array from `nil`.
 
 ## Advanced Usage:
 

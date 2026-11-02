@@ -46,8 +46,10 @@ type
 
   /// <summary>
   /// The configuration options for <see cref="TSqids" />.
-  /// All properties are optional; any property that isn't explicitly specified will fall back to its
-  /// default value.
+  /// Build it with one of the Create constructors: a plain record variable is not
+  /// initialized, so MinLength would contain garbage.
+  /// An empty Alphabet falls back to the default alphabet; the Blocklist does NOT
+  /// fall back (see <see cref="Blocklist" />).
   /// </summary>
   TSqidsOptions = record
     /// <summary>
@@ -65,6 +67,9 @@ type
 
     /// <summary>
     /// List of blocked words that must not appear in the IDs.
+    /// It replaces the default blocklist: use DefaultBlocklist + [...] to extend it.
+    /// An empty list (or nil) disables the blocklist.
+    /// Create(AAlphabet, AMinLength) sets it to DefaultBlocklist.
     /// </summary>
     Blocklist: TBlocklist;
 
