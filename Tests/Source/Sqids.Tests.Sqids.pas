@@ -15,7 +15,7 @@ interface
 uses
   System.SysUtils, System.Rtti, DUnitX.TestFramework,
 
-  Sqids.Classes;
+  Sqids.Types, Sqids.Classes;
 
 const
   DEFAULT_ALPHABET = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';

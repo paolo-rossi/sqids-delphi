@@ -30,6 +30,7 @@ uses
   Sqids.Tests.MinLength in 'Source\Sqids.Tests.MinLength.pas',
   Sqids.Tests.Uniqueness in 'Source\Sqids.Tests.Uniqueness.pas',
   Sqids.Tests.Sqids in 'Source\Sqids.Tests.Sqids.pas',
+  Sqids.Types in '..\Source\Sqids.Types.pas',
   Sqids.Classes in '..\Source\Sqids.Classes.pas',
   Sqids.Blocklist in '..\Source\Sqids.Blocklist.pas';
 

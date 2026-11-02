@@ -7,7 +7,7 @@ uses
   Vcl.Dialogs, Vcl.StdCtrls, System.ImageList, Vcl.ImgList, Vcl.ExtCtrls,
   Vcl.Buttons, System.Generics.Collections,
 
-  Sqids.Classes,
+  Sqids.Types, Sqids.Classes,
   Sqids.Blocklist, Vcl.Imaging.pngimage;
 
 type

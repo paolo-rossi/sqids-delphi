@@ -168,6 +168,7 @@
         <DCCReference Include="Source\Sqids.Tests.MinLength.pas"/>
         <DCCReference Include="Source\Sqids.Tests.Uniqueness.pas"/>
         <DCCReference Include="Source\Sqids.Tests.Sqids.pas"/>
+        <DCCReference Include="..\Source\Sqids.Types.pas"/>
         <DCCReference Include="..\Source\Sqids.Classes.pas"/>
         <DCCReference Include="..\Source\Sqids.Blocklist.pas"/>
         <BuildConfiguration Include="Base">

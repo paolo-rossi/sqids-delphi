@@ -102,6 +102,7 @@
             <Form>frmMain</Form>
             <FormType>dfm</FormType>
         </DCCReference>
+        <DCCReference Include="..\Source\Sqids.Types.pas"/>
         <DCCReference Include="..\Source\Sqids.Classes.pas"/>
         <DCCReference Include="..\Source\Sqids.Blocklist.pas"/>
         <BuildConfiguration Include="Base">
