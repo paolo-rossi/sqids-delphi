@@ -13,7 +13,7 @@ unit Sqids.Classes;
 interface
 
 uses
-  System.SysUtils, System.Generics.Collections, System.RegularExpressions,
+  System.SysUtils, System.Generics.Collections,
   Sqids.Types, Sqids.Blocklist;
 
 type
@@ -70,6 +70,8 @@ type
     FAlphabetLen: Integer;
     FMinLength: Integer;
     FBlocklist: TBlocklist;
+    // FBlocklistHasDigit[i] = FBlocklist[i] contains a digit (precomputed for IsBlockedID)
+    FBlocklistHasDigit: TArray<Boolean>;
   private
     class function DefaultOptions: TSqidsOptions; static;
   public const
@@ -190,6 +192,18 @@ begin
 		raise Exception.CreateFmt('minimum length has to be between %d and %d', [MinValue, Length(FAlphabet)]);
 
   FBlocklist := FilterBlocklist(FAlphabet, Options.Blocklist);
+
+  SetLength(FBlocklistHasDigit, Length(FBlocklist));
+  for var i := 0 to High(FBlocklist) do
+  begin
+    FBlocklistHasDigit[i] := False;
+    for var c in FBlocklist[i] do
+      if CharInSet(c, ['0'..'9']) then
+      begin
+        FBlocklistHasDigit[i] := True;
+        Break;
+      end;
+  end;
 end;
 
 class function TSqids.FilterBlocklist(const Alphabet: string; const Blocklist: TBlocklist): TBlocklist;
@@ -199,15 +213,21 @@ begin
 	// 2. no words less than 3 chars
 	// 3. if some words contain chars that are not in the alphabet, remove those
 	Result := [];
-	var alphabetChars := Alphabet.ToLower.ToCharArray;
+	var lowerAlphabet := Alphabet.ToLower;
   for var word in Blocklist do
   begin
 		if Length(word) >= 3 then
     begin
-			var wordChars := word.ToLower.ToCharArray;
-			var intersection := TSlice.Intersection<Char>(wordChars, alphabetChars);
-			if Length(intersection) = Length(wordChars) then
-        Result := Result + [string.LowerCase(word)];
+			var lowerWord := word.ToLower;
+			var allInAlphabet := True;
+			for var c in lowerWord do
+				if lowerAlphabet.IndexOf(c) < 0 then
+				begin
+					allInAlphabet := False;
+					Break;
+				end;
+			if allInAlphabet then
+        Result := Result + [lowerWord];
     end;
   end;
 end;
@@ -309,16 +329,10 @@ begin
 	if Length(numbers) = 0 then
 		Exit('');
 
-	var inRangeNumbers: TNumbers := [];
-
-	for var n in numbers do
-		if (n >= MinValue) and (n <= MaxValue) then
-			inRangeNumbers := inRangeNumbers + [n];
-
-	if Length(inRangeNumbers) <> Length(numbers) then
-		raise Exception.CreateFmt('encoding supports numbers between %d and %d', [MinValue, MaxValue]);
-
-	Result := EncodeNumbers(inRangeNumbers, False);
+	// No range check: TNumber is UInt64, so every value is already within
+	// [MinValue, MaxValue]. Pass a copy so EncodeNumbers can never modify
+	// the caller's array.
+	Result := EncodeNumbers(Copy(Numbers), False);
 end;
 
 function TSqids.EncodeNumbers(Numbers: TNumbers; Partitioned: Boolean): string;
@@ -402,18 +416,18 @@ end;
 function TSqids.IsBlockedID(const Id: string): Boolean;
 begin
 	var lowerId := string.LowerCase(Id);
-	var r := TRegEx.Create('\d', [roNotEmpty, roCompiled]);
 
   Result := False;
-	for var word in FBlocklist do
+	for var i := 0 to High(FBlocklist) do
   begin
+		var word := FBlocklist[i];
 		if Length(word) <= Length(lowerId) then
     begin
 			if (Length(lowerId) <= 3) or (Length(word) <= 3) then
       begin
 				if lowerId = word then
 					Exit(True);
-			end else if r.Match(word).Success then
+			end else if FBlocklistHasDigit[i] then
       begin
 				if lowerId.StartsWith(word) or lowerId.EndsWith(word) then
 					Exit(True)
