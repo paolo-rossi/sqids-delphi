@@ -49,6 +49,7 @@ type
     procedure PlaceAllInput;
 
     procedure DoEncode(Sender: TObject);
+    procedure ShowOutputError(const AMessage: string);
     procedure HandleInputDelete(Sender: TObject);
   public
     { Public declarations }
@@ -77,16 +78,16 @@ end;
 
 procedure TfrmMain.btnAlphabetRandomClick(Sender: TObject);
 begin
-  var len := Length(DEFAULT_ALPHABET);
-  var alphabet := '';
-  for var i := 0 to len do
+  // Fisher-Yates shuffle: keeps every character of the default alphabet
+  var chars := DEFAULT_ALPHABET.ToCharArray;
+  for var i := High(chars) downto 1 do
   begin
-    var ch := DEFAULT_ALPHABET.Chars[Random(len-1)];
-    if alphabet.IndexOf(ch) > -1 then
-      Continue;
-    alphabet := alphabet + ch;
+    var j := Random(i + 1);
+    var ch := chars[i];
+    chars[i] := chars[j];
+    chars[j] := ch;
   end;
-  memoAlphabet.Lines.Text := alphabet;
+  memoAlphabet.Lines.Text := string.Create(chars);
 end;
 
 procedure TfrmMain.btnInputPlusClick(Sender: TObject);
@@ -167,17 +168,59 @@ begin
   NewInput(789);
 end;
 
+function TryParseNumber(const AText: string; out AValue: TNumber): Boolean;
+begin
+  // TryStrToUInt64 would accept '-1' and wrap it to High(UInt64)
+  var LText := AText.Trim;
+  Result := (LText <> '') and (LText[1] <> '-') and TryStrToUInt64(LText, AValue);
+end;
+
 procedure TfrmMain.DoEncode(Sender: TObject);
 begin
+  // OnChange fires while the form is still being built
+  if not Assigned(FInput) then
+    Exit;
+
+  var LValid := True;
   var LNumbers: TNumbers := [];
-  for var LIndex := 0 to FInput.Count - 1 do
-    LNumbers := LNumbers + [StrToInt(FInput[LIndex].Text)];
+  for var LInput in FInput do
+  begin
+    var LValue: TNumber;
+    if TryParseNumber(LInput.Text, LValue) then
+    begin
+      LInput.Font.Color := clWindowText;
+      LNumbers := LNumbers + [LValue];
+    end
+    else
+    begin
+      LInput.Font.Color := clRed;
+      LValid := False;
+    end;
+  end;
 
-  var LAlpha := StringReplace(memoAlphabet.Lines.Text, sLineBreak, '', [rfReplaceAll]);
-  var LOpt := TSqidsOptions.Create(LAlpha, StrToIntDef(edtMinLength.Text, 0));
-  var LGen := TSqids.New(LOpt);
+  if not LValid then
+  begin
+    ShowOutputError('Inputs must be numbers between 0 and ' + TSqids.MaxValue.ToString);
+    Exit;
+  end;
 
-  edtOutput.Text := LGen.Encode(LNumbers);
+  try
+    var LAlpha := StringReplace(memoAlphabet.Lines.Text, sLineBreak, '', [rfReplaceAll]);
+    var LOpt := TSqidsOptions.Create(LAlpha, StrToIntDef(edtMinLength.Text, 0));
+    var LGen := TSqids.New(LOpt);
+
+    edtOutput.Font.Color := clWindowText;
+    edtOutput.Text := LGen.Encode(LNumbers);
+  except
+    on E: Exception do
+      ShowOutputError(E.Message);
+  end;
+end;
+
+procedure TfrmMain.ShowOutputError(const AMessage: string);
+begin
+  edtOutput.Font.Color := clRed;
+  edtOutput.Text := AMessage;
 end;
 
 procedure TfrmMain.edtMinLengthRightButtonClick(Sender: TObject);

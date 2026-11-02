@@ -118,7 +118,7 @@ begin
 	var generatedID := s.Encode(numbers);
 
 	if unblockedID <> generatedID then
-  	Assert.FailFmt(ERR_ENCODING, [numbers, unblockedID, generatedID]);
+  	Assert.FailFmt(ERR_ENCODING, [numbers.ToString, unblockedID, generatedID]);
 end;
 
 procedure TTestBlocklist.TestBlocklistEmpty(Numbers: TNumbers; const Id: string;
@@ -133,7 +133,7 @@ begin
 
 	var generatedID := s.Encode(numbers);
 	if id <> generatedID then
-  	Assert.FailFmt(ERR_ENCODING, [numbers.ToString, id, decodedNumbers.ToString]);
+  	Assert.FailFmt(ERR_ENCODING, [numbers.ToString, id, generatedID]);
 end;
 
 procedure TTestBlocklist.TestDecodingBlocklistedIDs(Numbers: TNumbers; const List: TBlocklist);
@@ -162,21 +162,21 @@ begin
 
 	var generatedID := s.Encode(numbers);
 	if id <> generatedID then
-  	Assert.FailFmt(ERR_ENCODING, [numbers.ToString, id, decodedNumbers.ToString]);
+  	Assert.FailFmt(ERR_ENCODING, [numbers.ToString, id, generatedID]);
 
   var expectedNumbers: TNumbers := [100_000];
 	// make sure we are using the passed blocklist
 	decodedNumbers := s.Decode(List[0]);
   if not decodedNumbers.IsEqual(expectedNumbers) then
-  	Assert.FailFmt(ERR_DECODING, [id, expectedNumbers.ToString, decodedNumbers.ToString]);
+  	Assert.FailFmt(ERR_DECODING, [List[0], expectedNumbers.ToString, decodedNumbers.ToString]);
 
 	generatedID := s.Encode(expectedNumbers);
 	if generatedID <> expectedId then
-		Assert.FailFmt(ERR_ENCODING, [expectedNumbers, ExpectedId, generatedID]);
+		Assert.FailFmt(ERR_ENCODING, [expectedNumbers.ToString, ExpectedId, generatedID]);
 
 	decodedNumbers := s.Decode(ExpectedId);
 	if not decodedNumbers.IsEqual(expectedNumbers) then
-  	Assert.FailFmt(ERR_DECODING, [id, expectedNumbers.ToString, decodedNumbers.ToString]);
+  	Assert.FailFmt(ERR_DECODING, [ExpectedId, expectedNumbers.ToString, decodedNumbers.ToString]);
 end;
 
 procedure TTestBlocklist.TestShortBlocklistMatch(Numbers: TNumbers; const List: TBlocklist);
