@@ -22,6 +22,22 @@ const
 
 type
   [TestFixture]
+  [Category('slice')]
+  TTestSlice = class(TObject)
+  public
+    [Test]
+    procedure TestDeepEqualSameValues;
+    [Test]
+    procedure TestDeepEqualDifferentValues;
+    [Test]
+    procedure TestDeepEqualDifferentLengths;
+    [Test]
+    procedure TestDeepEqualEmpty;
+    [Test]
+    procedure TestDeepEqualStrings;
+  end;
+
+  [TestFixture]
   [Category('sqids')]
   TTestSqids = class(TObject)
   public
@@ -105,7 +121,38 @@ begin
     Assert.FailFmt('Length(s.Decode("U9")) = %d, want %d', [Length(s.Decode('U9')), 1]);
 end;
 
+{ TTestSlice }
+
+procedure TTestSlice.TestDeepEqualSameValues;
+begin
+  Assert.IsTrue(TSlice.DeepEqual<UInt64>([1, 2, 3], [1, 2, 3]));
+end;
+
+procedure TTestSlice.TestDeepEqualDifferentValues;
+begin
+  Assert.IsFalse(TSlice.DeepEqual<UInt64>([1, 2, 3], [4, 5, 6]));
+  Assert.IsFalse(TSlice.DeepEqual<UInt64>([1, 2, 3], [1, 2, 4]));
+end;
+
+procedure TTestSlice.TestDeepEqualDifferentLengths;
+begin
+  Assert.IsFalse(TSlice.DeepEqual<UInt64>([1, 2], [1, 2, 3]));
+  Assert.IsFalse(TSlice.DeepEqual<UInt64>([], [1]));
+end;
+
+procedure TTestSlice.TestDeepEqualEmpty;
+begin
+  Assert.IsTrue(TSlice.DeepEqual<UInt64>([], []));
+end;
+
+procedure TTestSlice.TestDeepEqualStrings;
+begin
+  Assert.IsTrue(TSlice.DeepEqual<string>(['ab', 'cd'], ['ab', 'cd']));
+  Assert.IsFalse(TSlice.DeepEqual<string>(['ab', 'cd'], ['ab', 'CD']));
+end;
+
 initialization
+  TDUnitX.RegisterTestFixture(TTestSlice);
   TDUnitX.RegisterTestFixture(TTestSqids);
 
 end.

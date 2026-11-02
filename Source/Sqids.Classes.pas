@@ -13,7 +13,8 @@ unit Sqids.Classes;
 interface
 
 uses
-  System.SysUtils, System.Generics.Collections, System.RegularExpressions,
+  System.SysUtils, System.Generics.Collections, System.Generics.Defaults,
+  System.RegularExpressions,
   Sqids.Blocklist;
 
 type
@@ -581,15 +582,11 @@ begin
   if Length(Slice1) <> Length(Slice2) then
     Exit(False);
 
+  var comparer := TEqualityComparer<T>.Default;
   for var i := 0 to Length(Slice1) - 1 do
-  begin
-    if Slice1[i] <> Slice2[i] then
-    begin
-{
+    if not comparer.Equals(Slice1[i], Slice2[i]) then
       Exit(False);
-}
-    end;
-  end;
+
   Result := True;
 end;
 
