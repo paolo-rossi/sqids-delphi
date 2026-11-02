@@ -56,6 +56,11 @@ type
     [Test]
     procedure TestOutOfRangeInvalidMinLength;
 
+    {$IF CompilerVersion >= 34.0}
+    [Test]
+    procedure TestUninitializedOptionsDefaultToZero;
+    {$ENDIF}
+
   end;
 
 implementation
@@ -145,6 +150,22 @@ begin
     end,
     Exception, 'Should not allow out of range min length');
 end;
+
+{$IF CompilerVersion >= 34.0}
+procedure TTestMinLength.TestUninitializedOptionsDefaultToZero;
+var
+  options: TSqidsOptions; // deliberately not built via Create
+begin
+  Assert.AreEqual(0, options.MinLength, 'MinLength of a plain TSqidsOptions local must be 0');
+  Assert.IsEmpty(options.Alphabet);
+  Assert.IsTrue(options.Blocklist = nil);
+
+  options.Alphabet := DEFAULT_ALPHABET;
+  var s := TSqids.New(options);
+  var id := s.Encode([1, 2, 3]);
+  Assert.AreEqual(TSqids.New.Encode([1, 2, 3]), id);
+end;
+{$ENDIF}
 
 initialization
   TDUnitX.RegisterTestFixture(TTestMinLength);

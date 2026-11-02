@@ -99,7 +99,7 @@ var numbers := sqids.Decode(id);   // [1, 2, 3]
 
 You can easily customize the alphabet (the characters that Sqids uses to encode the numbers), the minimum length of the IDs (how long the IDs should be at minimum), and the blocklist (the words that should not appear in the IDs), by passing a `TSqidsOptions` record to `TSqids.New`.
 
-Always build the options with one of the `TSqidsOptions.Create` overloads (an uninitialized record would leave `MinLength` undefined). An empty alphabet falls back to the default one; the blocklist rules are described below.
+Build the options with one of the `TSqidsOptions.Create` overloads. On Delphi 10.4+ a plain `TSqidsOptions` variable is zero-initialized automatically; on Delphi 10.3 use `Default(TSqidsOptions)` first, otherwise `MinLength` is undefined. An empty alphabet falls back to the default one; the blocklist rules are described below.
 
 #### Custom Alphabet:
 

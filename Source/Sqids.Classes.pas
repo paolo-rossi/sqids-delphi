@@ -46,8 +46,9 @@ type
 
   /// <summary>
   /// The configuration options for <see cref="TSqids" />.
-  /// Build it with one of the Create constructors: a plain record variable is not
-  /// initialized, so MinLength would contain garbage.
+  /// Build it with one of the Create constructors. On Delphi 10.4+ a plain
+  /// record variable is zero-initialized (managed record); on older versions
+  /// use Default(TSqidsOptions), otherwise a local's MinLength contains garbage.
   /// An empty Alphabet falls back to the default alphabet; the Blocklist does NOT
   /// fall back (see <see cref="Blocklist" />).
   /// </summary>
@@ -76,6 +77,10 @@ type
     constructor Create(const AAlphabet: string; AMinLength: Integer); overload;
     constructor Create(const AAlphabet: string; AMinLength: Integer; const AList: TBlocklist); overload;
     constructor Create(const AList: TBlocklist); overload;
+
+    {$IF CompilerVersion >= 34.0} // Delphi 10.4 Sydney: custom managed records
+    class operator Initialize(out Dest: TSqidsOptions);
+    {$ENDIF}
   end;
 
   /// <summary>
@@ -494,6 +499,15 @@ begin
 end;
 
 { TSqidsOptions }
+
+{$IF CompilerVersion >= 34.0}
+class operator TSqidsOptions.Initialize(out Dest: TSqidsOptions);
+begin
+  Dest.Alphabet := '';
+  Dest.MinLength := 0;
+  Dest.Blocklist := nil;
+end;
+{$ENDIF}
 
 constructor TSqidsOptions.Create(const AAlphabet: string; AMinLength: Integer);
 begin
